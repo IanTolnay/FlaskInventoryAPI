@@ -4,7 +4,7 @@ info:
   description: Live inventory data from a Google Sheet
   version: "1.0"
 servers:
-  - url: https://f18d-61-69-34-126.ngrok-free.app
+  - url: https://flask-inventory-api.onrender.com
 paths:
   /inventory:
     get:
