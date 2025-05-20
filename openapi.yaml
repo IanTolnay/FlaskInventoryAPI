@@ -1,0 +1,30 @@
+openapi: 3.1.0
+info:
+  title: Inventory API
+  description: Live inventory data from a Google Sheet
+  version: "1.0"
+servers:
+  - url: https://f18d-61-69-34-126.ngrok-free.app
+paths:
+  /inventory:
+    get:
+      operationId: getInventory
+      summary: Get all inventory items
+      responses:
+        '200':
+          description: A list of all inventory rows
+  /inventory/{item_name}:
+    get:
+      operationId: getInventoryItem
+      summary: Get a specific item by name
+      parameters:
+        - name: item_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Details of the requested item
+        '404':
+          description: Item not found

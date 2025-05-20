@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "t360warehouseapi",
+  "private_key_id": "54ad3d2f1a963e3639e935969bce2db75129bdc9",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCwqUDLAlQH32D7\nQ3fiYKcktml2mVlbF3DgcsVRJ2MIj0Rk6R9j2sapMmsZGFa5IlPwlCvREjDHD84r\nl5cEJDO5KLBM0tskoXr6tPiVD9EtGSCLYLFatb+3tvE6gDGSKW7uBAqV8PKUW0K2\nrXjGyLIJi2Yeosnl2icRW+f6QWa+teIe3DfJKnGnoJCrcRBoqBo97cblcjrcuWds\nCcVq51tEQ3br84CsXUOU4YDhegrR0jcOH1KWQlaYWjjIwkBiuzRCmojsDRElblyR\nI7O7miLY5MUW+d0C+V2KTaKfEeMpDGI4B5H7HE6gggRuAcTfThtoSeY0sj2d4Rge\nIiAJEbZ1AgMBAAECggEAByveI3krhbF9s48TlZVfps/fP1J0tb8hdLSnNrPAnQWK\nPNM+oPd6mD4httng4cPdxtn2kjAic5I8R+y8oEBpkRsKI4EG84yFyRoB+7Sx3k2Z\nn2hqpEhu4ruC1pS2bnAcJRfCgXLpUtIGYHmkrRa5YEXP/KJjGJLFTzqwRt2f/1HV\nlFEhcTTFa7HXhRDiIYC8u1htU+hDmQ4ZE4LUeSB11n++MdDWkCA6tV+DnmcWxKO8\nCZbiB6l0YY8+V0s3Zh6EssioK0fRagLuko51yNgeozqB13k7yqD66Qiu2Hkzcni3\n0YRsXwQAhKoI5ANd/eU4+8cGC24iS7vspt9Ok9gmAQKBgQDV+CIgGZ1HL1aZdcn0\nRYmQ0/7/BCSQsdGvYwDlB6bVf603IirgWQxV5CHVq1sHt5cr348APUh6v6YAndes\nfz+Z2Cfk/N+iRKmeclUx2tvImmu2QWIhuy4VJxiWAxtmiTLOcguX9SThaq1YBQzA\nRPHJ1fpF7KtYcp2+8eraV+nhNQKBgQDTXQHSyz54NtlhM7CAe63kILpUm4VemXDF\nUEoejc9EjL02NUPf7zQE0q0FXTKlIojiGcRvlhwmTg8a3PotOLVqBgLjS6vYjPrh\nitO1j3/a+vdH1y7M4kJNFP7KEDzulnE9fl5oUF8CwjDS7y/ekYGlk7ItxF9ViQsJ\nxGk/TqpoQQKBgFymd1BjBwF99Ae7Q1msiqbVxULzrkmhVeSWABssNweXo4+OEfbX\nWEoQ4L2+10n+K01qHmfCIZJVTjJSJsOgzg9108CJ5uRCyxe69j0CQc0ZYK6onS9x\n98BdD35VlhXOLtvJ8k84bWHWaX0FosHWmMQHDbodgwxnhPrbkhA9pR5JAoGAHxE/\nsF1BfGgLgbcYTXpgb/TDjqYhb2s8YTRRALa1bY0GTs57gJHnYoIY/n3ZcN5nolxJ\nPGGjF5pHrBopB7abK89gY0p/IuBuC/Lc9YX3NBfJexzM+z6SokPgw5CpdCRW1sQZ\nWlnd7Ujf5lFUBvH6TX0tJn8DyE3ReokNM0n70EECgYBpR5Cxiyb4rZ17Zjbg/E37\nwVEYX15XAmttCxNbg3nssth49CvWZzGjDESZXGV7SpD1pWGX5EJ6BjB/Su1ooAsr\nV782txHdP6MiONdIEozSnWLjr6RBioM12cFU7lrEVgtl8xZPxCHjIMSO4E37fmRL\n/qUzIjlbotC5LYQWU5q3LA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "inventoryreader@t360warehouseapi.iam.gserviceaccount.com",
+  "client_id": "110994839629638954484",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/inventoryreader%40t360warehouseapi.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
