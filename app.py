@@ -11,6 +11,9 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 raw_creds = os.environ["GOOGLE_CREDS_JSON"]
 parsed_creds = json.loads(raw_creds)
 
+# Replace escaped newlines with real newlines in the private_key
+parsed_creds["private_key"] = parsed_creds["private_key"].replace("\\n", "\n")
+
 with open("creds.json", "w") as f:
     json.dump(parsed_creds, f)
 creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
