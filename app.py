@@ -2,11 +2,14 @@ from flask import Flask, jsonify, Response, send_file
 import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import os
 
 app = Flask(__name__)
 
 # Google Sheets setup
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+with open("creds.json", "w") as f:
+    f.write(os.environ["GOOGLE_CREDS_JSON"])
 creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 client = gspread.authorize(creds)
 
