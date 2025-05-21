@@ -19,10 +19,10 @@ with open("creds.json", "w") as f:
 creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 client = gspread.authorize(creds)
 
-# ✅ Replaced single-sheet access with reference to the whole spreadsheet
+# Reference the entire spreadsheet
 spreadsheet = client.open("Inventory_Tracker")
 
-# ✅ New endpoint to access any sheet dynamically
+# ✅ 1. Get all inventory from a specified sheet
 @app.route("/inventory/<sheet_name>", methods=["GET"])
 def get_inventory(sheet_name):
     try:
@@ -32,16 +32,37 @@ def get_inventory(sheet_name):
     except Exception as e:
         return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
 
-# GET one item (unchanged — still points to the first/default sheet, optional to keep or update later)
-@app.route("/inventory/item/<item_name>", methods=["GET"])
-def get_item(item_name):
-    sheet = spreadsheet.sheet1
-    data = sheet.get_all_records()
-    for row in data:
-        if row["Item"].lower() == item_name.lower():
-            return jsonify(row)
-    return jsonify({"error": "Item not found"}), 404
+# ✅ 2. Get a specific item by name from a specified sheet
+@app.route("/inventory/item/<sheet_name>/<item_name>", methods=["GET"])
+def get_inventory_item(sheet_name, item_name):
+    try:
+        sheet = spreadsheet.worksheet(sheet_name)
+        data = sheet.get_all_records()
+        for row in data:
+            if row["Item"].lower() == item_name.lower():
+                return jsonify(row)
+        return jsonify({"error": "Item not found"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
 
+# ✅ 3. Get items at a specific location in a specified sheet
+@app.route("/location/<sheet_name>/<location_id>", methods=["GET"])
+def get_by_location(sheet_name, location_id):
+    try:
+        sheet = spreadsheet.worksheet(sheet_name)
+        data = sheet.get_all_records()
+        matches = [
+            row for row in data
+            if row.get("Location", "").strip().lower() == location_id.strip().lower()
+        ]
+        if matches:
+            return jsonify(matches)
+        else:
+            return jsonify({"error": "Location not found"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
+
+# Plugin manifest and OpenAPI spec endpoints
 @app.route("/.well-known/ai-plugin.json")
 def plugin_manifest():
     return send_file("ai-plugin.json", mimetype="application/json")
@@ -49,19 +70,6 @@ def plugin_manifest():
 @app.route("/openapi.yaml")
 def openapi_spec():
     return send_file("openapi.yaml", mimetype="text/yaml")
-
-@app.route("/location/<location_id>", methods=["GET"])
-def get_by_location(location_id):
-    sheet = spreadsheet.sheet1
-    data = sheet.get_all_records()
-    matches = [
-        row for row in data
-        if row.get("Location", "").strip().lower() == location_id.strip().lower()
-    ]
-    if matches:
-        return jsonify(matches)
-    else:
-        return jsonify({"error": "Location not found"}), 404
 
 if __name__ == "__main__":
     app.run(debug=True)
