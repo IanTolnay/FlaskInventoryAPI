@@ -46,6 +46,19 @@ def plugin_manifest():
 def openapi_spec():
     return send_file("openapi.yaml", mimetype="text/yaml")
 
+@app.route("/location/<location_id>", methods=["GET"])
+def get_by_location(location_id):
+    data = sheet.get_all_records()
+    matches = [
+        row for row in data
+        if row.get("Location", "").strip().lower() == location_id.strip().lower()
+    ]
+    if matches:
+        return jsonify(matches)
+    else:
+        return jsonify({"error": "Location not found"}), 404
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 
