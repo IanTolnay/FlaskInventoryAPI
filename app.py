@@ -19,19 +19,23 @@ with open("creds.json", "w") as f:
 creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 client = gspread.authorize(creds)
 
-# Open your sheet
-sheet = client.open("Inventory_Tracker").sheet1  # Change name if different
+# ✅ Replaced single-sheet access with reference to the whole spreadsheet
+spreadsheet = client.open("Inventory_Tracker")
 
-# GET all inventory
-@app.route("/inventory", methods=["GET"])
-def get_inventory():
-    data = sheet.get_all_records()
-    pretty_json = json.dumps(data, indent=2)
-    return Response(pretty_json, mimetype="application/json")
+# ✅ New endpoint to access any sheet dynamically
+@app.route("/inventory/<sheet_name>", methods=["GET"])
+def get_inventory(sheet_name):
+    try:
+        sheet = spreadsheet.worksheet(sheet_name)
+        data = sheet.get_all_records()
+        return Response(json.dumps(data, indent=2), mimetype="application/json")
+    except Exception as e:
+        return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
 
-# GET one item
-@app.route("/inventory/<item_name>", methods=["GET"])
+# GET one item (unchanged — still points to the first/default sheet, optional to keep or update later)
+@app.route("/inventory/item/<item_name>", methods=["GET"])
 def get_item(item_name):
+    sheet = spreadsheet.sheet1
     data = sheet.get_all_records()
     for row in data:
         if row["Item"].lower() == item_name.lower():
@@ -48,6 +52,7 @@ def openapi_spec():
 
 @app.route("/location/<location_id>", methods=["GET"])
 def get_by_location(location_id):
+    sheet = spreadsheet.sheet1
     data = sheet.get_all_records()
     matches = [
         row for row in data
@@ -58,7 +63,5 @@ def get_by_location(location_id):
     else:
         return jsonify({"error": "Location not found"}), 404
 
-
 if __name__ == "__main__":
     app.run(debug=True)
-
