@@ -28,3 +28,18 @@ paths:
           description: Details of the requested item
         '404':
           description: Item not found
+  /location/{location_id}:
+    get:
+      operationId: getByLocation
+      summary: Get items stored at a specific warehouse location
+      parameters:
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A list of items found at the location
+        "404":
+          description: Location not found
