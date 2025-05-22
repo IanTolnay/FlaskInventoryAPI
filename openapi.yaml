@@ -6,25 +6,38 @@ info:
 servers:
   - url: https://flask-inventory-api.onrender.com
 paths:
-  /inventory:
+  /inventory/{sheet_name}:
     get:
-      operationId: getInventory
-      summary: Get all inventory items
+      operationId: getInventoryBySheet
+      summary: Get all inventory from a Google Sheet tab
+      description: |
+        Returns all inventory items listed in the given sheet_name tab of the spreadsheet.
+        Example prompt: "Show me everything in sheet Main"
+      parameters:
+        - name: sheet_name
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
-          description: A list of all inventory rows
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/InventoryItem'
+          description: List of inventory rows
+        "400":
+          description: Could not access sheet
 
-  /inventory/{item_name}:
+  /inventory/item/{sheet_name}/{item_name}:
     get:
-      operationId: getInventoryItem
-      summary: Get a specific item by name
+      operationId: getInventoryItemBySheet
+      summary: Get item details by name from a specific sheet
+      description: |
+        Returns details for a specific item from the specified sheet.
+        Example prompt: "What is the status of device UPS in sheet Devices"
       parameters:
+        - name: sheet_name
+          in: path
+          required: true
+          schema:
+            type: string
         - name: item_name
           in: path
           required: true
@@ -32,19 +45,23 @@ paths:
             type: string
       responses:
         "200":
-          description: Details of the requested item
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InventoryItem'
+          description: Inventory item details
         "404":
           description: Item not found
 
-  /location/{location_id}:
+  /location/{sheet_name}/{location_id}:
     get:
-      operationId: getByLocation
-      summary: Get items stored at a specific warehouse location
+      operationId: getByLocationBySheet
+      summary: Get all items stored at a specific location in a sheet
+      description: |
+        Returns a list of inventory items stored at the specified location in the given sheet.
+        Example prompt: "What’s in location 3B on sheet Inventory_Tracker?"
       parameters:
+        - name: sheet_name
+          in: path
+          required: true
+          schema:
+            type: string
         - name: location_id
           in: path
           required: true
@@ -52,28 +69,6 @@ paths:
             type: string
       responses:
         "200":
-          description: A list of items found at the location
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/InventoryItem'
+          description: List of items at location
         "404":
           description: Location not found
-
-components:
-  schemas:
-    InventoryItem:
-      type: object
-      properties:
-        Item:
-          type: string
-        Stock:
-          type: string
-        Location:
-          type: string
-        Arrival Date:
-          type: string
-        Date Accessed:
-          type: string
