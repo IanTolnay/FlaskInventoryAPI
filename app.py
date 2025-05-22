@@ -1,8 +1,9 @@
-from flask import Flask, jsonify, Response, send_file
+from flask import Flask, jsonify, Response, send_file, request
 import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
+import datetime
 
 app = Flask(__name__)
 
@@ -10,21 +11,16 @@ app = Flask(__name__)
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 raw_creds = os.environ["GOOGLE_CREDS_JSON"]
 parsed_creds = json.loads(raw_creds)
-
-# Replace escaped newlines with real newlines in the private_key
 parsed_creds["private_key"] = parsed_creds["private_key"].replace("\\n", "\n")
 
-# Write credentials to file for gspread
 with open("creds.json", "w") as f:
     json.dump(parsed_creds, f)
 
 creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 client = gspread.authorize(creds)
 
-# Reference the entire spreadsheet
 spreadsheet = client.open("Inventory_Tracker")
 
-# ✅ Get all inventory from a specified sheet
 @app.route("/inventory/<sheet_name>", methods=["GET"])
 def get_inventory(sheet_name):
     try:
@@ -34,7 +30,6 @@ def get_inventory(sheet_name):
     except Exception as e:
         return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
 
-# ✅ Get a specific item by name from a specified sheet
 @app.route("/inventory/item/<sheet_name>/<item_name>", methods=["GET"])
 def get_inventory_item(sheet_name, item_name):
     try:
@@ -47,7 +42,6 @@ def get_inventory_item(sheet_name, item_name):
     except Exception as e:
         return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
 
-# ✅ Get items at a specific location in a specified sheet
 @app.route("/location/<sheet_name>/<location_id>", methods=["GET"])
 def get_by_location(sheet_name, location_id):
     try:
@@ -58,7 +52,6 @@ def get_by_location(sheet_name, location_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# ✅ List available sheet tabs
 @app.route("/sheets", methods=["GET"])
 def list_sheets():
     try:
@@ -67,12 +60,41 @@ def list_sheets():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# ✅ Alias route for /sheets
 @app.route("/sheetnames", methods=["GET"])
 def list_sheetnames():
     return list_sheets()
 
-# Plugin manifest and OpenAPI spec endpoints
+# ✅ Add new inventory item with secure POST
+@app.route("/inventory/add", methods=["POST"])
+def add_inventory_item():
+    try:
+        auth = request.headers.get("Authorization")
+        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data = request.json
+        sheet = spreadsheet.worksheet(data["sheet_name"])
+        row = [
+            data.get("Item", ""),
+            data.get("Stock", ""),
+            data.get("Location", ""),
+            data.get("Arrival Date", ""),
+            data.get("Date Accessed", "")
+        ]
+        sheet.append_row(row)
+
+        # Log the change
+        log_sheet = spreadsheet.worksheet("Change_Log")
+        log_sheet.append_row([
+            "ADD",
+            json.dumps(row),
+            datetime.datetime.now().isoformat()
+        ])
+
+        return jsonify({"status": "Item added", "item": row}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 @app.route("/.well-known/ai-plugin.json")
 def plugin_manifest():
     return send_file("ai-plugin.json", mimetype="application/json")
