@@ -67,6 +67,11 @@ def list_sheets():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# ✅ Alias route for /sheets
+@app.route("/sheetnames", methods=["GET"])
+def list_sheetnames():
+    return list_sheets()
+
 # Plugin manifest and OpenAPI spec endpoints
 @app.route("/.well-known/ai-plugin.json")
 def plugin_manifest():
