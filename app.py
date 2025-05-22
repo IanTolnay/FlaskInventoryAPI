@@ -58,6 +58,15 @@ def get_by_location(sheet_name, location_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# ✅ List available sheet tabs
+@app.route("/sheets", methods=["GET"])
+def list_sheets():
+    try:
+        sheet_titles = [ws.title for ws in spreadsheet.worksheets()]
+        return jsonify(sheet_titles)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 # Plugin manifest and OpenAPI spec endpoints
 @app.route("/.well-known/ai-plugin.json")
 def plugin_manifest():
