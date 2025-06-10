@@ -22,6 +22,12 @@ paths:
       responses:
         "200":
           description: List of inventory rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
         "400":
           description: Could not access sheet
 
@@ -46,6 +52,11 @@ paths:
       responses:
         "200":
           description: Inventory item details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
         "404":
           description: Item not found
 
@@ -70,16 +81,23 @@ paths:
       responses:
         "200":
           description: List of items at location
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
         "404":
           description: Location not found
 
   /sheet/update_structure:
     post:
       operationId: updateSheetStructure
-      summary: Update a sheet’s structure by removing columns
+      summary: Remove columns from a sheet
       description: |
-        Updates the structure of a given sheet by removing specified columns from the header and clearing their values.
-        Example prompt: "Remove 'Steps Tried' and 'Ongoing Issues' from Integration_Log"
+        Removes specified columns from a sheet by updating the header row and clearing their values from all entries.
+      security:
+        - ApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -91,12 +109,54 @@ paths:
               properties:
                 sheet_name:
                   type: string
+                  description: Name of the sheet to modify
                 remove_columns:
                   type: array
                   items:
                     type: string
+                  description: List of column headers to remove
       responses:
         "200":
           description: Sheet structure updated
         "400":
           description: Sheet not found or update failed
+
+  /sheet/set_headers:
+    post:
+      operationId: setSheetHeaders
+      summary: Replace sheet headers with a new set
+      description: |
+        Replaces the current headers in the specified sheet with a new list of headers. This action clears the first row and inserts the new headers.
+        Authentication is required via an API key passed as a query parameter.
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+          description: API key used for authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sheet_name
+                - headers
+              properties:
+                sheet_name:
+                  type: string
+                  description: Name of the sheet to update
+                headers:
+                  type: array
+                  items:
+                    type: string
+                  description: New list of column headers
+      responses:
+        "200":
+          description: Headers updated successfully
+        "400":
+          description: Bad request or missing fields
+        "401":
+          description: Unauthorized access
