@@ -153,8 +153,8 @@ def update_sheet_structure():
 @app.route("/sheet/set_headers", methods=["POST"])
 def set_headers():
     try:
-        auth = request.headers.get("Authorization")
-        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
+        api_key = request.args.get("key")
+        if api_key != os.environ["INVENTORY_WRITE_KEY"]:
             return jsonify({"error": "Unauthorized"}), 401
 
         data = request.get_json()
