@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Inventory Assistant",
+  "name_for_model": "inventory_assistant",
+  "description_for_human": "Query and update inventory data in Google Sheets.",
+  "description_for_model": "Plugin that reads and modifies inventory data from Google Sheets. Supports live lookups, item queries, sheet listing, header updates, and structural edits.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://flask-inventory-api.onrender.com/openapi.yaml"
+  },
+  "logo_url": "https://flask-inventory-api.onrender.com/logo.png",
+  "contact_email": "ian.tolnay@t360group.com",
+  "legal_info_url": "https://gist.githubusercontent.com/IanTolnay/c54616712aa91b5a42bda3cf96c7a3d9/raw/b76da863e4ebb5937fb75468f7dd75896dfe1403/privacy-policy.md"
+}
