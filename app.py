@@ -27,6 +27,7 @@ def get_inventory(sheet_name):
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
         values = worksheet.get_all_values()
+        print("DEBUG values:", values)
         headers = values[0] if values else []
         rows = values[1:] if len(values) > 1 else []
 
@@ -45,6 +46,18 @@ def get_raw_sheet(sheet_name):
         worksheet = spreadsheet.worksheet(sheet_name)
         raw = worksheet.get_all_values()
         return jsonify(raw), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Debug route: return only headers
+@app.route("/inventory/headers/<sheet_name>", methods=["GET"])
+def get_headers(sheet_name):
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        values = worksheet.get_all_values()
+        headers = values[0] if values else []
+        print("DEBUG headers:", headers)
+        return jsonify({"headers": headers}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
