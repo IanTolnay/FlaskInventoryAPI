@@ -64,7 +64,6 @@ def list_sheets():
 def list_sheetnames():
     return list_sheets()
 
-# ✅ Add new inventory item with secure POST
 @app.route("/inventory/add", methods=["POST"])
 def add_inventory_item():
     try:
@@ -73,14 +72,23 @@ def add_inventory_item():
             return jsonify({"error": "Unauthorized"}), 401
 
         data = request.json
-        sheet = spreadsheet.worksheet(data["sheet_name"])
-        row = [
-            data.get("Item", ""),
-            data.get("Stock", ""),
-            data.get("Location", ""),
-            data.get("Arrival Date", ""),
-            data.get("Date Accessed", "")
-        ]
+        sheet_name = data.get("sheet_name")
+        sheet = spreadsheet.worksheet(sheet_name)
+
+        if sheet_name == "Integration_Log":
+            # Dynamically map values to columns in header
+            headers = sheet.row_values(1)
+            row = [data.get(h, "") for h in headers]
+        else:
+            # Inventory schema
+            row = [
+                data.get("Item", ""),
+                data.get("Stock", ""),
+                data.get("Location", ""),
+                data.get("Arrival Date", ""),
+                data.get("Date Accessed", "")
+            ]
+
         sheet.append_row(row)
 
         # Log the change
