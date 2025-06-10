@@ -76,8 +76,28 @@ def add_inventory_item():
         sheet = spreadsheet.worksheet(sheet_name)
 
         if sheet_name == "Integration_Log":
-            # Dynamically map values to columns in header
+            # Ensure headers exist
             headers = sheet.row_values(1)
+            if not headers:
+                headers = [
+                    "Timestamp",
+                    "Task Name",
+                    "Description of Step",
+                    "Outcome",
+                    "Status",
+                    "Script Link or Snippet",
+                    "Notes / Next Steps"
+                ]
+                sheet.insert_row(headers, 1)
+
+            # Ensure new fields are added as columns
+            new_keys = [key for key in data if key not in headers and key != "sheet_name"]
+            if new_keys:
+                headers.extend(new_keys)
+                sheet.delete_row(1)
+                sheet.insert_row(headers, 1)
+
+            # Create row matching current headers
             row = [data.get(h, "") for h in headers]
         else:
             # Inventory schema
