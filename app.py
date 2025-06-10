@@ -76,7 +76,6 @@ def add_inventory_item():
         sheet = spreadsheet.worksheet(sheet_name)
 
         if sheet_name == "Integration_Log":
-            # Ensure headers exist
             headers = sheet.row_values(1)
             if not headers:
                 headers = [
@@ -90,16 +89,13 @@ def add_inventory_item():
                 ]
                 sheet.insert_row(headers, 1)
 
-            # Check for new fields and update headers if necessary
             new_keys = [key for key in data if key not in headers and key != "sheet_name"]
             if new_keys:
                 headers.extend(new_keys)
-                sheet.update('A1', [headers])  # Update header row
+                sheet.update('A1', [headers])
 
-            # Create row based on headers
             row = [data.get(h, "") for h in headers]
         else:
-            # Inventory schema
             row = [
                 data.get("Item", ""),
                 data.get("Stock", ""),
@@ -110,7 +106,6 @@ def add_inventory_item():
 
         sheet.append_row(row)
 
-        # Log the change
         log_sheet = spreadsheet.worksheet("Change_Log")
         log_sheet.append_row([
             "ADD",
@@ -119,6 +114,39 @@ def add_inventory_item():
         ])
 
         return jsonify({"status": "Item added", "item": row}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/sheet/update_structure", methods=["POST"])
+def update_sheet_structure():
+    try:
+        auth = request.headers.get("Authorization")
+        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data = request.json
+        sheet_name = data["sheet_name"]
+        remove_columns = data.get("remove_columns", [])
+
+        sheet = spreadsheet.worksheet(sheet_name)
+        headers = sheet.row_values(1)
+        all_values = sheet.get_all_values()
+
+        # Create new headers
+        new_headers = [h for h in headers if h not in remove_columns]
+        new_sheet = [new_headers]
+
+        # Rebuild the sheet rows with only the kept columns
+        col_indices = [headers.index(h) for h in new_headers]
+        for row in all_values[1:]:  # skip headers
+            filtered_row = [row[i] if i < len(row) else "" for i in col_indices]
+            new_sheet.append(filtered_row)
+
+        # Clear and replace entire sheet
+        sheet.clear()
+        sheet.update('A1', new_sheet)
+
+        return jsonify({"status": "Headers updated", "new_headers": new_headers}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
