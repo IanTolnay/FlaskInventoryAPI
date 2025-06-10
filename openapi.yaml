@@ -160,3 +160,24 @@ paths:
           description: Bad request or missing fields
         "401":
           description: Unauthorized access
+
+  /sheet/list_all:
+    get:
+      operationId: listAllSheets
+      summary: List all sheet tabs in the spreadsheet
+      description: |
+        Returns the names of all sheets (tabs) available within the Inventory_Tracker spreadsheet.
+      responses:
+        "200":
+          description: Sheet names listed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sheets:
+                    type: array
+                    items:
+                      type: string
+        "500":
+          description: Failed to retrieve sheets

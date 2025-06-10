@@ -52,17 +52,17 @@ def get_by_location(sheet_name, location_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route("/sheets", methods=["GET"])
-def list_sheets():
-    try:
-        sheet_titles = [ws.title for ws in spreadsheet.worksheets()]
-        return jsonify(sheet_titles)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
 @app.route("/sheetnames", methods=["GET"])
 def list_sheetnames():
-    return list_sheets()
+    return list_all_sheets()
+
+@app.route("/sheet/list_all", methods=["GET"])
+def list_all_sheets():
+    try:
+        sheet_titles = [ws.title for ws in spreadsheet.worksheets()]
+        return jsonify({"sheets": sheet_titles}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/inventory/add", methods=["POST"])
 def add_inventory_item():
@@ -79,13 +79,8 @@ def add_inventory_item():
             headers = sheet.row_values(1)
             if not headers:
                 headers = [
-                    "Timestamp",
-                    "Task Name",
-                    "Description of Step",
-                    "Outcome",
-                    "Status",
-                    "Script Link or Snippet",
-                    "Notes / Next Steps"
+                    "Timestamp", "Task Name", "Description of Step", "Outcome",
+                    "Status", "Script Link or Snippet", "Notes / Next Steps"
                 ]
                 sheet.insert_row(headers, 1)
 
@@ -107,11 +102,7 @@ def add_inventory_item():
         sheet.append_row(row)
 
         log_sheet = spreadsheet.worksheet("Change_Log")
-        log_sheet.append_row([
-            "ADD",
-            json.dumps(row),
-            datetime.datetime.now().isoformat()
-        ])
+        log_sheet.append_row(["ADD", json.dumps(row), datetime.datetime.now().isoformat()])
 
         return jsonify({"status": "Item added", "item": row}), 200
     except Exception as e:
@@ -132,17 +123,14 @@ def update_sheet_structure():
         headers = sheet.row_values(1)
         all_values = sheet.get_all_values()
 
-        # Create new headers
         new_headers = [h for h in headers if h not in remove_columns]
         new_sheet = [new_headers]
 
-        # Rebuild the sheet rows with only the kept columns
         col_indices = [headers.index(h) for h in new_headers]
-        for row in all_values[1:]:  # skip headers
+        for row in all_values[1:]:
             filtered_row = [row[i] if i < len(row) else "" for i in col_indices]
             new_sheet.append(filtered_row)
 
-        # Clear and replace entire sheet
         sheet.clear()
         sheet.update('A1', new_sheet)
 
@@ -153,8 +141,8 @@ def update_sheet_structure():
 @app.route("/sheet/set_headers", methods=["POST"])
 def set_headers():
     try:
-        api_key = request.args.get("key")
-        if api_key != os.environ["INVENTORY_WRITE_KEY"]:
+        auth = request.headers.get("Authorization")
+        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
             return jsonify({"error": "Unauthorized"}), 401
 
         data = request.get_json()
