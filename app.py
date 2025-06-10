@@ -150,6 +150,28 @@ def update_sheet_structure():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route("/sheet/set_headers", methods=["POST"])
+def set_headers():
+    try:
+        auth = request.headers.get("Authorization")
+        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data = request.get_json()
+        sheet_name = data.get("sheet_name")
+        headers = data.get("headers")
+
+        if not sheet_name or not headers:
+            return jsonify({"error": "Missing sheet_name or headers"}), 400
+
+        sheet = spreadsheet.worksheet(sheet_name)
+        sheet.delete_row(1)
+        sheet.insert_row(headers, index=1)
+
+        return jsonify({"status": "Headers updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/.well-known/ai-plugin.json")
 def plugin_manifest():
     return send_file("ai-plugin.json", mimetype="application/json")
