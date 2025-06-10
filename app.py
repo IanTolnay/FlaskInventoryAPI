@@ -90,14 +90,13 @@ def add_inventory_item():
                 ]
                 sheet.insert_row(headers, 1)
 
-            # Ensure new fields are added as columns
+            # Check for new fields and update headers if necessary
             new_keys = [key for key in data if key not in headers and key != "sheet_name"]
             if new_keys:
                 headers.extend(new_keys)
-                sheet.delete_row(1)
-                sheet.insert_row(headers, 1)
+                sheet.update('A1', [headers])  # Update header row
 
-            # Create row matching current headers
+            # Create row based on headers
             row = [data.get(h, "") for h in headers]
         else:
             # Inventory schema
