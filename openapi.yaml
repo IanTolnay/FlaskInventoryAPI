@@ -72,3 +72,31 @@ paths:
           description: List of items at location
         "404":
           description: Location not found
+
+  /sheet/update_structure:
+    post:
+      operationId: updateSheetStructure
+      summary: Update a sheet’s structure by removing columns
+      description: |
+        Updates the structure of a given sheet by removing specified columns from the header and clearing their values.
+        Example prompt: "Remove 'Steps Tried' and 'Ongoing Issues' from Integration_Log"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sheet_name
+              properties:
+                sheet_name:
+                  type: string
+                remove_columns:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Sheet structure updated
+        "400":
+          description: Sheet not found or update failed
