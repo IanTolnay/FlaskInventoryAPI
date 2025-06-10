@@ -26,8 +26,8 @@ if not AUTHORIZED:
 def get_inventory(sheet_name):
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
-        max_rows = worksheet.row_count
-        values = worksheet.get(f"A1:Z{max_rows}")
+        values = worksheet.get_all_values()
+        print("DEBUG values:", values)
         headers = values[0] if values else []
         rows = values[1:] if len(values) > 1 else []
 
@@ -44,9 +44,20 @@ def get_inventory(sheet_name):
 def get_raw_sheet(sheet_name):
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
-        max_rows = worksheet.row_count
-        raw = worksheet.get(f"A1:Z{max_rows}")
+        raw = worksheet.get_all_values()
         return jsonify(raw), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Debug route: return only headers
+@app.route("/inventory/headers/<sheet_name>", methods=["GET"])
+def get_headers(sheet_name):
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        values = worksheet.get_all_values()
+        headers = values[0] if values else []
+        print("DEBUG headers:", headers)
+        return jsonify({"headers": headers}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -55,8 +66,7 @@ def get_raw_sheet(sheet_name):
 def get_structured_sheet(sheet_name):
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
-        max_rows = worksheet.row_count
-        values = worksheet.get(f"A1:Z{max_rows}")
+        values = worksheet.get_all_values()
         headers = values[0] if values else []
         records = values[1:] if len(values) > 1 else []
 
