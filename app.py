@@ -29,7 +29,6 @@ def get_inventory(sheet_name):
         all_values = worksheet.get_all_values()
         rows = all_values[1:] if len(all_values) > 1 else []
 
-        # Ensure header list is used even if all_values has only one row
         records = [
             {headers[i]: row[i] if i < len(row) else "" for i in range(len(headers))}
             for row in rows
@@ -159,6 +158,12 @@ def log_integration():
         data = request.get_json()
         worksheet = spreadsheet.worksheet("Integration_Log")
         headers = worksheet.row_values(1)
+
+        # Add any missing headers
+        new_keys = [key for key in data.keys() if key not in headers]
+        if new_keys:
+            worksheet.insert_row(headers + new_keys, 1)
+            headers += new_keys
 
         row = [data.get(header, "") for header in headers]
         worksheet.append_row(row)
