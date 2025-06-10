@@ -21,47 +21,43 @@ if not AUTHORIZED:
     def block_unauthorized():
         return jsonify({"error": "Unauthorized"}), 401
 
-# Retrieve all rows from a specified sheet (as dicts using first row as headers)
 @app.route("/inventory/<sheet_name>", methods=["GET"])
 def get_inventory(sheet_name):
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
-        values = worksheet.get_all_values()
-        print("DEBUG values:", values)
-        headers = values[0] if values else []
-        rows = values[1:] if len(values) > 1 else []
+        headers = worksheet.row_values(1)
+        all_values = worksheet.get_all_values()
+        rows = all_values[1:] if len(all_values) > 1 else []
 
+        # Ensure header list is used even if all_values has only one row
         records = [
             {headers[i]: row[i] if i < len(row) else "" for i in range(len(headers))}
             for row in rows
-        ]
-        return jsonify(records), 200
+        ] if rows else []
+
+        return jsonify(records if records else [{"headers_only": headers}]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# View raw values (for debugging)
-@app.route("/inventory/raw/<sheet_name>", methods=["GET"])
-def get_raw_sheet(sheet_name):
-    try:
-        worksheet = spreadsheet.worksheet(sheet_name)
-        raw = worksheet.get_all_values()
-        return jsonify(raw), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-# Debug route: return only headers
 @app.route("/inventory/headers/<sheet_name>", methods=["GET"])
 def get_headers(sheet_name):
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
-        values = worksheet.get_all_values()
-        headers = values[0] if values else []
-        print("DEBUG headers:", headers)
+        headers = worksheet.row_values(1)
         return jsonify({"headers": headers}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Structured retrieval with separate headers and rows
+@app.route("/inventory/raw/<sheet_name>", methods=["GET"])
+def get_raw_sheet(sheet_name):
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        max_rows = worksheet.row_count
+        raw = worksheet.get(f"A1:Z{max_rows}")
+        return jsonify(raw), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 @app.route("/inventory/structured/<sheet_name>", methods=["GET"])
 def get_structured_sheet(sheet_name):
     try:
@@ -77,7 +73,6 @@ def get_structured_sheet(sheet_name):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Retrieve one item by name
 @app.route("/inventory/item/<sheet_name>/<item_name>")
 def get_item(sheet_name, item_name):
     try:
@@ -90,7 +85,6 @@ def get_item(sheet_name, item_name):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Filter by location
 @app.route("/location/<sheet_name>/<location_id>")
 def get_by_location(sheet_name, location_id):
     try:
@@ -101,7 +95,6 @@ def get_by_location(sheet_name, location_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Remove columns
 @app.route("/sheet/update_structure", methods=["POST"])
 def update_structure():
     data = request.get_json()
@@ -131,7 +124,6 @@ def update_structure():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Set new headers
 @app.route("/sheet/set_headers", methods=["POST"])
 def set_headers():
     key = request.args.get("key")
@@ -150,7 +142,6 @@ def set_headers():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# List all sheets
 @app.route("/sheet/list_all", methods=["GET"])
 def list_all_sheets():
     try:
@@ -159,7 +150,6 @@ def list_all_sheets():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Serve OpenAPI spec
 @app.route("/openapi.yaml")
 def openapi_spec():
     return send_file("openapi.yaml", mimetype="text/yaml")
