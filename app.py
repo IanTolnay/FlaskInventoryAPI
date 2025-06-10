@@ -7,14 +7,19 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-# Set up gspread using the Google service account
-creds_json = os.environ.get("GOOGLE_CREDS_JSON")
-if not creds_json:
-    raise ValueError("GOOGLE_CREDS_JSON environment variable not set")
+# Set up gspread using the Google service account from a secret file
+with open("creds.json", "r") as f:
+    creds_dict = json.load(f)
 
-creds_dict = json.loads(creds_json)
 gc = gspread.service_account_from_dict(creds_dict)
 spreadsheet = gc.open("Inventory_Tracker")
+
+# Authorization check
+AUTHORIZED = os.environ.get("INVENTORY_WRITE_KEY") == "T360_MASTER_KEY"
+if not AUTHORIZED:
+    @app.before_request
+    def block_unauthorized():
+        return jsonify({"error": "Unauthorized"}), 401
 
 # Retrieve all rows from a specified sheet (as dicts using first row as headers)
 @app.route("/inventory/<sheet_name>", methods=["GET"])
@@ -100,8 +105,8 @@ def update_structure():
 # Set new headers
 @app.route("/sheet/set_headers", methods=["POST"])
 def set_headers():
-    AUTHORIZED = True  # adjust this logic for more granular checks
-    if not AUTHORIZED:
+    key = request.args.get("key")
+    if key != os.environ.get("INVENTORY_WRITE_KEY"):
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
