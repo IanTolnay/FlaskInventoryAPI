@@ -1,61 +1,122 @@
-from flask import Flask, jsonify, Response, send_file, request
-import json
+from flask import Flask, jsonify, request, send_file
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from flask_cors import CORS
 import os
-import datetime
+import json
 
 app = Flask(__name__)
+CORS(app)
 
-# Google Sheets setup
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-raw_creds = os.environ["GOOGLE_CREDS_JSON"]
-parsed_creds = json.loads(raw_creds)
-parsed_creds["private_key"] = parsed_creds["private_key"].replace("\\n", "\n")
+# Set up gspread using the Google service account
+creds_json = os.environ.get("GOOGLE_CREDS_JSON")
+if not creds_json:
+    raise ValueError("GOOGLE_CREDS_JSON environment variable not set")
 
-with open("creds.json", "w") as f:
-    json.dump(parsed_creds, f)
+creds_dict = json.loads(creds_json)
+gc = gspread.service_account_from_dict(creds_dict)
+spreadsheet = gc.open("Inventory_Tracker")
 
-creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
-client = gspread.authorize(creds)
-
-spreadsheet = client.open("Inventory_Tracker")
-
+# Retrieve all rows from a specified sheet (as dicts using first row as headers)
 @app.route("/inventory/<sheet_name>", methods=["GET"])
 def get_inventory(sheet_name):
     try:
-        sheet = spreadsheet.worksheet(sheet_name)
-        data = sheet.get_all_records()
-        return Response(json.dumps(data, indent=2), mimetype="application/json")
-    except Exception as e:
-        return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
+        worksheet = spreadsheet.worksheet(sheet_name)
+        values = worksheet.get_all_values()  # raw 2D data
+        headers = values[0] if values else []
+        rows = values[1:] if len(values) > 1 else []
 
-@app.route("/inventory/item/<sheet_name>/<item_name>", methods=["GET"])
-def get_inventory_item(sheet_name, item_name):
-    try:
-        sheet = spreadsheet.worksheet(sheet_name)
-        data = sheet.get_all_records()
-        for row in data:
-            if row.get("Item", "").strip().lower() == item_name.strip().lower():
-                return jsonify(row)
-        return jsonify({"error": "Item not found"}), 404
-    except Exception as e:
-        return jsonify({"error": f"Could not access sheet: {str(e)}"}), 400
-
-@app.route("/location/<sheet_name>/<location_id>", methods=["GET"])
-def get_by_location(sheet_name, location_id):
-    try:
-        sheet = spreadsheet.worksheet(sheet_name)
-        data = sheet.get_all_records()
-        results = [row for row in data if str(row.get("Location", "")).strip().lower() == location_id.strip().lower()]
-        return jsonify(results)
+        records = [
+            {headers[i]: row[i] if i < len(row) else "" for i in range(len(headers))}
+            for row in rows
+        ]
+        return jsonify(records), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route("/sheetnames", methods=["GET"])
-def list_sheetnames():
-    return list_all_sheets()
+# View raw values (for debugging)
+@app.route("/inventory/raw/<sheet_name>", methods=["GET"])
+def get_raw_sheet(sheet_name):
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        raw = worksheet.get_all_values()
+        return jsonify(raw), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
+# Retrieve one item by name
+@app.route("/inventory/item/<sheet_name>/<item_name>")
+def get_item(sheet_name, item_name):
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        records = worksheet.get_all_records()
+        for row in records:
+            if row.get("Item", "").lower() == item_name.lower():
+                return jsonify(row), 200
+        return jsonify({"error": "Item not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Filter by location
+@app.route("/location/<sheet_name>/<location_id>")
+def get_by_location(sheet_name, location_id):
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        records = worksheet.get_all_records()
+        result = [row for row in records if row.get("Location", "") == location_id]
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Remove columns
+@app.route("/sheet/update_structure", methods=["POST"])
+def update_structure():
+    data = request.get_json()
+    sheet_name = data.get("sheet_name")
+    remove_columns = data.get("remove_columns", [])
+
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        all_data = worksheet.get_all_values()
+        if not all_data:
+            return jsonify({"error": "Sheet is empty"}), 400
+
+        header = all_data[0]
+        new_header = [h for h in header if h not in remove_columns]
+        new_data = []
+
+        for row in all_data[1:]:
+            new_row = [val for i, val in enumerate(row) if header[i] not in remove_columns]
+            new_data.append(new_row)
+
+        worksheet.clear()
+        worksheet.append_row(new_header)
+        for row in new_data:
+            worksheet.append_row(row)
+
+        return jsonify({"message": "Structure updated"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Set new headers
+@app.route("/sheet/set_headers", methods=["POST"])
+def set_headers():
+    key = request.args.get("key")
+    if key != os.environ.get("INVENTORY_WRITE_KEY"):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    sheet_name = data.get("sheet_name")
+    headers = data.get("headers")
+
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        worksheet.delete_rows(1)
+        worksheet.insert_row(headers, 1)
+        return jsonify({"message": "Headers updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# List all sheets
 @app.route("/sheet/list_all", methods=["GET"])
 def list_all_sheets():
     try:
@@ -64,109 +125,10 @@ def list_all_sheets():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/inventory/add", methods=["POST"])
-def add_inventory_item():
-    try:
-        auth = request.headers.get("Authorization")
-        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
-            return jsonify({"error": "Unauthorized"}), 401
-
-        data = request.json
-        sheet_name = data.get("sheet_name")
-        sheet = spreadsheet.worksheet(sheet_name)
-
-        if sheet_name == "Integration_Log":
-            headers = sheet.row_values(1)
-            if not headers:
-                headers = [
-                    "Timestamp", "Task Name", "Description of Step", "Outcome",
-                    "Status", "Script Link or Snippet", "Notes / Next Steps"
-                ]
-                sheet.insert_row(headers, 1)
-
-            new_keys = [key for key in data if key not in headers and key != "sheet_name"]
-            if new_keys:
-                headers.extend(new_keys)
-                sheet.update('A1', [headers])
-
-            row = [data.get(h, "") for h in headers]
-        else:
-            row = [
-                data.get("Item", ""),
-                data.get("Stock", ""),
-                data.get("Location", ""),
-                data.get("Arrival Date", ""),
-                data.get("Date Accessed", "")
-            ]
-
-        sheet.append_row(row)
-
-        log_sheet = spreadsheet.worksheet("Change_Log")
-        log_sheet.append_row(["ADD", json.dumps(row), datetime.datetime.now().isoformat()])
-
-        return jsonify({"status": "Item added", "item": row}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-@app.route("/sheet/update_structure", methods=["POST"])
-def update_sheet_structure():
-    try:
-        auth = request.headers.get("Authorization")
-        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
-            return jsonify({"error": "Unauthorized"}), 401
-
-        data = request.json
-        sheet_name = data["sheet_name"]
-        remove_columns = data.get("remove_columns", [])
-
-        sheet = spreadsheet.worksheet(sheet_name)
-        headers = sheet.row_values(1)
-        all_values = sheet.get_all_values()
-
-        new_headers = [h for h in headers if h not in remove_columns]
-        new_sheet = [new_headers]
-
-        col_indices = [headers.index(h) for h in new_headers]
-        for row in all_values[1:]:
-            filtered_row = [row[i] if i < len(row) else "" for i in col_indices]
-            new_sheet.append(filtered_row)
-
-        sheet.clear()
-        sheet.update('A1', new_sheet)
-
-        return jsonify({"status": "Headers updated", "new_headers": new_headers}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-@app.route("/sheet/set_headers", methods=["POST"])
-def set_headers():
-    try:
-        auth = request.headers.get("Authorization")
-        if auth != f"Bearer {os.environ['INVENTORY_WRITE_KEY']}":
-            return jsonify({"error": "Unauthorized"}), 401
-
-        data = request.get_json()
-        sheet_name = data.get("sheet_name")
-        headers = data.get("headers")
-
-        if not sheet_name or not headers:
-            return jsonify({"error": "Missing sheet_name or headers"}), 400
-
-        sheet = spreadsheet.worksheet(sheet_name)
-        sheet.delete_row(1)
-        sheet.insert_row(headers, index=1)
-
-        return jsonify({"status": "Headers updated successfully"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/.well-known/ai-plugin.json")
-def plugin_manifest():
-    return send_file("ai-plugin.json", mimetype="application/json")
-
+# Serve OpenAPI spec
 @app.route("/openapi.yaml")
 def openapi_spec():
     return send_file("openapi.yaml", mimetype="text/yaml")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
