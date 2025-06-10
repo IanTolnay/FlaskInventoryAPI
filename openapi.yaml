@@ -23,6 +23,38 @@ paths:
         "400":
           description: Could not access sheet
 
+  /inventory/headers/{sheet_name}:
+    get:
+      operationId: getSheetHeaders
+      summary: Get only the header row from a sheet
+      parameters:
+        - name: sheet_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A list of headers from the sheet
+        "400":
+          description: Could not retrieve headers
+
+  /inventory/structured/{sheet_name}:
+    get:
+      operationId: getStructuredSheet
+      summary: Get structured sheet data with headers and rows separated
+      parameters:
+        - name: sheet_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Structured data with separate headers and rows
+        "400":
+          description: Could not retrieve structured data
+
   /inventory/item/{sheet_name}/{item_name}:
     get:
       operationId: getInventoryItemBySheet
