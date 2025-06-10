@@ -48,6 +48,22 @@ def get_raw_sheet(sheet_name):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# Structured retrieval with separate headers and rows
+@app.route("/inventory/structured/<sheet_name>", methods=["GET"])
+def get_structured_sheet(sheet_name):
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        values = worksheet.get_all_values()
+        headers = values[0] if values else []
+        records = values[1:] if len(values) > 1 else []
+
+        return jsonify({
+            "headers": headers,
+            "rows": records
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 # Retrieve one item by name
 @app.route("/inventory/item/<sheet_name>/<item_name>")
 def get_item(sheet_name, item_name):
