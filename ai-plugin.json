@@ -2,8 +2,8 @@
   "schema_version": "v1",
   "name_for_human": "Inventory Assistant",
   "name_for_model": "inventory_assistant",
-  "description_for_human": "Query inventory from Google Sheets.",
-  "description_for_model": "Plugin that retrieves inventory and stock information from a Google Sheets backend.",
+  "description_for_human": "Query and update inventory data in Google Sheets.",
+  "description_for_model": "Plugin that reads and modifies inventory data from Google Sheets. Supports live lookups, item queries, sheet listing, header updates, and structural edits.",
   "auth": {
     "type": "none"
   },

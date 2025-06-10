@@ -12,7 +12,11 @@ creds_json = os.environ.get("GOOGLE_CREDS_JSON")
 if not creds_json:
     raise ValueError("GOOGLE_CREDS_JSON environment variable not set")
 
+# Fix newline parsing in private_key
 creds_dict = json.loads(creds_json)
+if "private_key" in creds_dict:
+    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+
 gc = gspread.service_account_from_dict(creds_dict)
 spreadsheet = gc.open("Inventory_Tracker")
 
@@ -21,7 +25,7 @@ spreadsheet = gc.open("Inventory_Tracker")
 def get_inventory(sheet_name):
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
-        values = worksheet.get_all_values()  # raw 2D data
+        values = worksheet.get_all_values()
         headers = values[0] if values else []
         rows = values[1:] if len(values) > 1 else []
 
