@@ -36,6 +36,7 @@ def get_inventory(sheet_name):
 
         return jsonify(records if records else [{"headers_only": headers}]), 200
     except Exception as e:
+        print(f"Error in get_inventory: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/inventory/headers/<sheet_name>", methods=["GET"])
@@ -45,6 +46,7 @@ def get_headers(sheet_name):
         headers = worksheet.row_values(1)
         return jsonify({"headers": headers}), 200
     except Exception as e:
+        print(f"Error in get_headers: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/inventory/raw/<sheet_name>", methods=["GET"])
@@ -55,6 +57,7 @@ def get_raw_sheet(sheet_name):
         raw = worksheet.get(f"A1:Z{max_rows}")
         return jsonify(raw), 200
     except Exception as e:
+        print(f"Error in get_raw_sheet: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/inventory/structured/<sheet_name>", methods=["GET"])
@@ -70,6 +73,7 @@ def get_structured_sheet(sheet_name):
             "rows": records
         }), 200
     except Exception as e:
+        print(f"Error in get_structured_sheet: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/inventory/item/<sheet_name>/<item_name>")
@@ -82,6 +86,7 @@ def get_item(sheet_name, item_name):
                 return jsonify(row), 200
         return jsonify({"error": "Item not found"}), 404
     except Exception as e:
+        print(f"Error in get_item: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/location/<sheet_name>/<location_id>")
@@ -92,6 +97,7 @@ def get_by_location(sheet_name, location_id):
         result = [row for row in records if row.get("Location", "") == location_id]
         return jsonify(result), 200
     except Exception as e:
+        print(f"Error in get_by_location: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/sheet/update_structure", methods=["POST"])
@@ -121,6 +127,7 @@ def update_structure():
 
         return jsonify({"message": "Structure updated"}), 200
     except Exception as e:
+        print(f"Error in update_structure: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/sheet/set_headers", methods=["POST"])
@@ -139,6 +146,7 @@ def set_headers():
         worksheet.insert_row(headers, 1)
         return jsonify({"message": "Headers updated successfully"}), 200
     except Exception as e:
+        print(f"Error in set_headers: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/sheet/list_all", methods=["GET"])
@@ -147,6 +155,7 @@ def list_all_sheets():
         sheet_titles = [ws.title for ws in spreadsheet.worksheets()]
         return jsonify({"sheets": sheet_titles}), 200
     except Exception as e:
+        print(f"Error in list_all_sheets: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/integration/log", methods=["POST"])
@@ -170,6 +179,7 @@ def log_integration():
 
         return jsonify({"message": "Log added successfully"}), 200
     except Exception as e:
+        print(f"Error in log_integration: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/openapi.yaml")
@@ -189,13 +199,18 @@ def create_sheet():
         if not sheet_name:
             return jsonify({"error": "Missing 'sheet_name'"}), 400
 
-        new_worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="100", cols="20")
+        # Check if sheet already exists
+        existing_titles = [ws.title for ws in spreadsheet.worksheets()]
+        if sheet_name in existing_titles:
+            return jsonify({"message": f"Sheet '{sheet_name}' already exists"}), 200
 
+        new_worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="100", cols="20")
         if headers:
             new_worksheet.append_row(headers)
 
         return jsonify({"message": f"Sheet '{sheet_name}' created successfully"}), 200
     except Exception as e:
+        print(f"Error in create_sheet: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
