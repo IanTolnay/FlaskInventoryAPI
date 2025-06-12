@@ -29,7 +29,6 @@ def get_inventory(sheet_name):
         all_values = worksheet.get_all_values()
         rows = all_values[1:] if len(all_values) > 1 else []
 
-        # Ensure header list is used even if all_values has only one row
         records = [
             {headers[i]: row[i] if i < len(row) else "" for i in range(len(headers))}
             for row in rows
@@ -150,9 +149,54 @@ def list_all_sheets():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/integration/log", methods=["POST"])
+def log_integration():
+    if os.environ.get("INVENTORY_WRITE_KEY") != "T360_MASTER_KEY":
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        data = request.get_json()
+        worksheet = spreadsheet.worksheet("Integration_Log")
+        headers = worksheet.row_values(1)
+
+        # Add any missing headers
+        new_keys = [key for key in data.keys() if key not in headers]
+        if new_keys:
+            worksheet.insert_row(headers + new_keys, 1)
+            headers += new_keys
+
+        row = [data.get(header, "") for header in headers]
+        worksheet.append_row(row)
+
+        return jsonify({"message": "Log added successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/openapi.yaml")
 def openapi_spec():
     return send_file("openapi.yaml", mimetype="text/yaml")
+
+@app.route("/sheet/create", methods=["POST"])
+def create_sheet():
+    if os.environ.get("INVENTORY_WRITE_KEY") != "T360_MASTER_KEY":
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        data = request.get_json()
+        sheet_name = data.get("sheet_name")
+        headers = data.get("headers", [])
+
+        if not sheet_name:
+            return jsonify({"error": "Missing 'sheet_name'"}), 400
+
+        new_worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="100", cols="20")
+
+        if headers:
+            new_worksheet.append_row(headers)
+
+        return jsonify({"message": f"Sheet '{sheet_name}' created successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

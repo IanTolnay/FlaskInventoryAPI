@@ -177,3 +177,34 @@ paths:
           description: Unauthorized
         "500":
           description: Server error
+
+  /sheet/create:
+    post:
+      operationId: createSheet
+      summary: Create a new sheet tab
+      description: |
+        Creates a new tab in the Google Spreadsheet with optional headers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sheet_name
+              properties:
+                sheet_name:
+                  type: string
+                headers:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Sheet created
+        "400":
+          description: Missing name or invalid input
+        "401":
+          description: Unauthorized
+        "500":
+          description: Creation error
