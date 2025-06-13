@@ -111,6 +111,8 @@ def update_structure():
     sheet_name = data.get("sheet_name")
     remove_columns = data.get("remove_columns", [])
 
+    print(f"[LOG] Received request to update structure: sheet_name='{sheet_name}', remove_columns={remove_columns}")
+
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
         all_data = worksheet.get_all_values()
@@ -134,6 +136,7 @@ def update_structure():
     except Exception as e:
         print(f"Error in update_structure: {e}")
         return jsonify({"error": str(e)}), 400
+
 
 @app.route("/sheet/set_headers", methods=["POST"])
 @require_write_key
