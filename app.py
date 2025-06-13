@@ -214,5 +214,33 @@ def create_sheet():
         print(f"Error in create_sheet: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route("/inventory/add", methods=["POST"])
+@require_write_key
+def add_inventory_item():
+    try:
+        data = request.get_json()
+        sheet_name = data.get("sheet_name")
+        item = data.get("item", {})
+
+        if not sheet_name or not item:
+            return jsonify({"error": "Missing sheet_name or item"}), 400
+
+        worksheet = spreadsheet.worksheet(sheet_name)
+        headers = worksheet.row_values(1)
+
+        new_keys = [key for key in item.keys() if key not in headers]
+        if new_keys:
+            headers += new_keys
+            worksheet.delete_rows(1)
+            worksheet.insert_row(headers, 1)
+
+        row = [item.get(header, "") for header in headers]
+        worksheet.append_row(row)
+
+        return jsonify({"message": "Item added successfully"}), 200
+    except Exception as e:
+        print(f"Error in add_inventory_item: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
