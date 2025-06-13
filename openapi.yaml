@@ -107,217 +107,25 @@ paths:
         "500":
           description: Server error
 
-openapi: 3.1.0
-info:
-  title: Inventory API
-  description: Full inventory and sheet control from Google Sheets
-  version: "1.0"
-servers:
-  - url: https://flask-inventory-api.onrender.com
-
-paths:
-  /inventory/{sheet_name}:
-    get:
-      operationId: getInventoryBySheet
-      summary: Get all inventory items from a specified sheet
-      parameters:
-        - name: sheet_name
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: A list of inventory rows from the specified sheet
-        "400":
-          description: Could not access sheet
-
-  /inventory/headers/{sheet_name}:
-    get:
-      operationId: getSheetHeaders
-      summary: Get only the header row from a sheet
-      parameters:
-        - name: sheet_name
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: A list of headers from the sheet
-        "400":
-          description: Could not retrieve headers
-
-  /inventory/structured/{sheet_name}:
-    get:
-      operationId: getStructuredSheet
-      summary: Get structured sheet data with headers and rows separated
-      parameters:
-        - name: sheet_name
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Structured data with separate headers and rows
-        "400":
-          description: Could not retrieve structured data
-
-  /inventory/item/{sheet_name}/{item_name}:
-    get:
-      operationId: getInventoryItemBySheet
-      summary: Get a specific item by name from a specified sheet
-      parameters:
-        - name: sheet_name
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: item_name
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Details of the requested item
-        "404":
-          description: Item not found
-
-  /location/{sheet_name}/{location_id}:
-    get:
-      operationId: getByLocationBySheet
-      summary: Get items stored at a specific location in a given sheet
-      parameters:
-        - name: sheet_name
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: A list of items found at the location
-        "404":
-          description: Location not found
-
-  /sheet/list_all:
-    get:
-      operationId: listAllSheets
-      summary: List all available sheets
-      responses:
-        "200":
-          description: A list of sheet names
-        "500":
-          description: Server error
-
-/inventory/add:
-  post:
-    operationId: addInventoryItem
-    summary: Add a new item to a sheet
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties: {}
-            additionalProperties: true
-    responses:
-      "200":
-        description: Item added
-      "400":
-        description: Bad request
-      "401":
-        description: Unauthorized
-
-  /sheet/update_structure:
+  /inventory/add:
     post:
-      operationId: updateSheetStructure
-      summary: Remove columns from a sheet
+      operationId: addInventoryItem
+      summary: Add a new item to a sheet
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              properties:
-                sheet_name:
-                  type: string
-                remove_columns:
-                  type: array
-                  items:
-                    type: string
+              additionalProperties: true
       responses:
         "200":
-          description: Headers updated
+          description: Item added
         "400":
           description: Bad request
         "401":
           description: Unauthorized
 
-  /sheet/set_headers:
-    post:
-      operationId: setSheetHeaders
-      summary: Set a new header row for a sheet
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sheet_name:
-                  type: string
-                headers:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        "200":
-          description: Headers updated successfully
-        "400":
-          description: Missing required fields
-        "401":
-          description: Unauthorized
-        "500":
-          description: Server error
-
-  /sheet/create:
-    post:
-      operationId: createSheet
-      summary: Create a new sheet tab
-      description: |
-        Creates a new tab in the Google Spreadsheet with optional headers.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - sheet_name
-              properties:
-                sheet_name:
-                  type: string
-                headers:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        "200":
-          description: Sheet created
-        "400":
-          description: Missing name or invalid input
-        "401":
-          description: Unauthorized
-        "500":
-          description: Creation error
   /sheet/update_structure:
     post:
       operationId: updateSheetStructure
