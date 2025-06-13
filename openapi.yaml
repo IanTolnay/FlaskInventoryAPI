@@ -117,6 +117,7 @@ paths:
           application/json:
             schema:
               type: object
+              properties: {}  # Add this line to avoid validation errors
               additionalProperties: true
       responses:
         "200":
