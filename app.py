@@ -15,11 +15,14 @@ gc = gspread.service_account_from_dict(creds_dict)
 spreadsheet = gc.open("Inventory_Tracker")
 
 # Authorization check
-AUTHORIZED = os.environ.get("INVENTORY_WRITE_KEY") == "T360_MASTER_KEY"
-if not AUTHORIZED:
-    @app.before_request
-    def block_unauthorized():
-        return jsonify({"error": "Unauthorized"}), 401
+def is_authorized():
+    return request.args.get("key") == os.environ.get("INVENTORY_WRITE_KEY")
+
+@app.before_request
+def authorize():
+    if request.endpoint in ['update_structure', 'set_headers', 'create_sheet', 'log_integration']:
+        if not is_authorized():
+            return jsonify({"error": "Unauthorized"}), 401
 
 @app.route("/inventory/<sheet_name>", methods=["GET"])
 def get_inventory(sheet_name):
@@ -132,10 +135,6 @@ def update_structure():
 
 @app.route("/sheet/set_headers", methods=["POST"])
 def set_headers():
-    key = request.args.get("key")
-    if key != os.environ.get("INVENTORY_WRITE_KEY"):
-        return jsonify({"error": "Unauthorized"}), 401
-
     data = request.get_json()
     sheet_name = data.get("sheet_name")
     headers = data.get("headers")
@@ -160,9 +159,6 @@ def list_all_sheets():
 
 @app.route("/integration/log", methods=["POST"])
 def log_integration():
-    if os.environ.get("INVENTORY_WRITE_KEY") != "T360_MASTER_KEY":
-        return jsonify({"error": "Unauthorized"}), 401
-
     try:
         data = request.get_json()
         worksheet = spreadsheet.worksheet("Integration_Log")
@@ -188,9 +184,6 @@ def openapi_spec():
 
 @app.route("/sheet/create", methods=["POST"])
 def create_sheet():
-    if os.environ.get("INVENTORY_WRITE_KEY") != "T360_MASTER_KEY":
-        return jsonify({"error": "Unauthorized"}), 401
-
     try:
         data = request.get_json()
         sheet_name = data.get("sheet_name")
