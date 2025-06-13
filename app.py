@@ -3,6 +3,7 @@ import gspread
 from flask_cors import CORS
 import os
 import json
+from functools import wraps
 
 app = Flask(__name__)
 CORS(app)
@@ -14,15 +15,15 @@ with open("creds.json", "r") as f:
 gc = gspread.service_account_from_dict(creds_dict)
 spreadsheet = gc.open("Inventory_Tracker")
 
-# Authorization check
-def is_authorized():
-    return request.args.get("key") == os.environ.get("INVENTORY_WRITE_KEY")
-
-@app.before_request
-def authorize():
-    if request.endpoint in ['update_structure', 'set_headers', 'create_sheet', 'log_integration']:
-        if not is_authorized():
+# Authorization decorator for write endpoints
+def require_write_key(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        key = request.args.get("key")
+        if key != os.environ.get("INVENTORY_WRITE_KEY"):
             return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route("/inventory/<sheet_name>", methods=["GET"])
 def get_inventory(sheet_name):
@@ -104,6 +105,7 @@ def get_by_location(sheet_name, location_id):
         return jsonify({"error": str(e)}), 400
 
 @app.route("/sheet/update_structure", methods=["POST"])
+@require_write_key
 def update_structure():
     data = request.get_json()
     sheet_name = data.get("sheet_name")
@@ -134,6 +136,7 @@ def update_structure():
         return jsonify({"error": str(e)}), 400
 
 @app.route("/sheet/set_headers", methods=["POST"])
+@require_write_key
 def set_headers():
     data = request.get_json()
     sheet_name = data.get("sheet_name")
@@ -158,6 +161,7 @@ def list_all_sheets():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/integration/log", methods=["POST"])
+@require_write_key
 def log_integration():
     try:
         data = request.get_json()
@@ -183,6 +187,7 @@ def openapi_spec():
     return send_file("openapi.yaml", mimetype="text/yaml")
 
 @app.route("/sheet/create", methods=["POST"])
+@require_write_key
 def create_sheet():
     try:
         data = request.get_json()
