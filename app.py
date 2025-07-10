@@ -19,7 +19,13 @@ spreadsheet = gc.open("Inventory_Tracker")
 def require_write_key(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Accept API key from header (Bearer) or ?key= param
         key = request.args.get("key")
+        auth_header = request.headers.get("Authorization")
+
+        if auth_header and auth_header.startswith("Bearer "):
+            key = auth_header.split(" ")[1]
+
         if key != os.environ.get("INVENTORY_WRITE_KEY"):
             return jsonify({"error": "Unauthorized"}), 401
         return f(*args, **kwargs)
@@ -136,7 +142,6 @@ def update_structure():
     except Exception as e:
         print(f"Error in update_structure: {e}")
         return jsonify({"error": str(e)}), 400
-
 
 @app.route("/sheet/set_headers", methods=["POST"])
 @require_write_key
