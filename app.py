@@ -213,6 +213,19 @@ def create_sheet():
         print(f"Error in create_sheet: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route("/sheet/rename", methods=["POST"])
+@require_write_key
+def rename_sheet():
+    data = request.get_json()
+    old_name = data.get("old_name")
+    new_name = data.get("new_name")
+    try:
+        worksheet = spreadsheet.worksheet(old_name)
+        worksheet.update_title(new_name)
+        return jsonify({"message": f"Renamed {old_name} to {new_name}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 @app.route("/inventory/add", methods=["POST"])
 @require_write_key
 def add_inventory_item():
