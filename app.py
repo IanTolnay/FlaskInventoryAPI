@@ -226,6 +226,18 @@ def rename_sheet():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route("/sheet/delete", methods=["POST"])
+@require_write_key
+def delete_sheet():
+    data = request.get_json()
+    sheet_name = data.get("sheet_name")
+    try:
+        worksheet = spreadsheet.worksheet(sheet_name)
+        spreadsheet.del_worksheet(worksheet)
+        return jsonify({"message": f"Sheet '{sheet_name}' deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 @app.route("/inventory/add", methods=["POST"])
 @require_write_key
 def add_inventory_item():
