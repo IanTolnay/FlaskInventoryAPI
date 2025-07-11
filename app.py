@@ -219,6 +219,8 @@ def rename_sheet():
     data = request.get_json()
     old_name = data.get("old_name")
     new_name = data.get("new_name")
+    if not old_name or not new_name:
+        return jsonify({"error": "Both 'old_name' and 'new_name' are required"}), 400
     try:
         worksheet = spreadsheet.worksheet(old_name)
         worksheet.update_title(new_name)
@@ -231,6 +233,8 @@ def rename_sheet():
 def delete_sheet():
     data = request.get_json()
     sheet_name = data.get("sheet_name")
+    if not sheet_name:
+        return jsonify({"error": "'sheet_name' is required"}), 400
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
         spreadsheet.del_worksheet(worksheet)
